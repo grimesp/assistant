@@ -60,6 +60,8 @@ assistant gmail delete-draft <draft_id>
 ### Organization
 ```bash
 assistant gmail labels
+assistant gmail label-create <name>                 # Create a new label
+assistant gmail label-apply <label> --query "..."   # Apply label to matching emails
 assistant gmail trash <message_id>
 assistant gmail delete <message_id>
 assistant gmail mark-read <message_id>

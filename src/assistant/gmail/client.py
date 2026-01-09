@@ -609,6 +609,57 @@ class GmailClient:
         except HttpError as e:
             raise RuntimeError(f"Gmail API error: {e}")
 
+    def get_label_id(self, name: str) -> Optional[str]:
+        """
+        Get a label ID by name.
+
+        Args:
+            name: The label name
+
+        Returns:
+            Label ID if found, None otherwise
+        """
+        try:
+            response = self.service.users().labels().list(userId="me").execute()
+            labels = response.get("labels", [])
+            for label in labels:
+                if label["name"].lower() == name.lower():
+                    return label["id"]
+            return None
+        except HttpError as e:
+            raise RuntimeError(f"Gmail API error: {e}")
+
+    def create_label(self, name: str) -> dict:
+        """
+        Create a new label.
+
+        Args:
+            name: The label name
+
+        Returns:
+            Created label dictionary with id and name
+        """
+        try:
+            label_body = {
+                "name": name,
+                "labelListVisibility": "labelShow",
+                "messageListVisibility": "show",
+            }
+            label = (
+                self.service.users()
+                .labels()
+                .create(userId="me", body=label_body)
+                .execute()
+            )
+            return {
+                "id": label["id"],
+                "name": label["name"],
+            }
+        except HttpError as e:
+            if e.resp.status == 409:
+                raise ValueError(f"Label already exists: {name}")
+            raise RuntimeError(f"Gmail API error: {e}")
+
     def list_drafts(self) -> list[dict]:
         """
         List all drafts.
@@ -785,8 +836,35 @@ class GmailClient:
 
             # Build action
             action = {}
-            add_label_ids = list(add_labels) if add_labels else []
-            remove_label_ids = list(remove_labels) if remove_labels else []
+
+            # System labels can be used directly, user labels need ID lookup
+            system_labels = {
+                "INBOX", "SPAM", "TRASH", "UNREAD", "STARRED", "IMPORTANT",
+                "SENT", "DRAFT", "CATEGORY_PERSONAL", "CATEGORY_SOCIAL",
+                "CATEGORY_PROMOTIONS", "CATEGORY_UPDATES", "CATEGORY_FORUMS",
+            }
+
+            add_label_ids = []
+            if add_labels:
+                for label in add_labels:
+                    if label.upper() in system_labels:
+                        add_label_ids.append(label.upper())
+                    else:
+                        label_id = self.get_label_id(label)
+                        if not label_id:
+                            raise ValueError(f"Label not found: {label}")
+                        add_label_ids.append(label_id)
+
+            remove_label_ids = []
+            if remove_labels:
+                for label in remove_labels:
+                    if label.upper() in system_labels:
+                        remove_label_ids.append(label.upper())
+                    else:
+                        label_id = self.get_label_id(label)
+                        if not label_id:
+                            raise ValueError(f"Label not found: {label}")
+                        remove_label_ids.append(label_id)
 
             if archive:
                 remove_label_ids.append("INBOX")

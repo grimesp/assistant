@@ -120,6 +120,60 @@ def list_labels():
         raise typer.Exit(1)
 
 
+@app.command("label-create")
+def create_label(
+    name: str = typer.Argument(..., help="Label name to create"),
+):
+    """Create a new Gmail label."""
+    require_auth()
+
+    client = GmailClient()
+    try:
+        label = client.create_label(name)
+        display_success(f"Created label: {label['name']}")
+    except ValueError as e:
+        display_error(str(e))
+        raise typer.Exit(1)
+    except RuntimeError as e:
+        display_error(str(e))
+        raise typer.Exit(1)
+
+
+@app.command("label-apply")
+def apply_label(
+    label: str = typer.Argument(..., help="Label to apply"),
+    query: str = typer.Option(..., "--query", "-q", help="Gmail search query to match emails"),
+    limit: int = typer.Option(500, "--limit", "-n", help="Maximum emails to process"),
+):
+    """Apply a label to emails matching a search query."""
+    require_auth()
+
+    client = GmailClient()
+    try:
+        # Get the label ID
+        label_id = client.get_label_id(label)
+        if not label_id:
+            display_error(f"Label not found: {label}")
+            raise typer.Exit(1)
+
+        # Search for matching emails
+        messages = client.search(query, max_results=limit)
+        if not messages:
+            console.print(f"No emails found matching: {query}")
+            return
+
+        # Apply label to each
+        count = 0
+        for msg in messages:
+            client.modify_labels(msg["id"], add_labels=[label_id])
+            count += 1
+
+        display_success(f"Applied '{label}' to {count} emails.")
+    except RuntimeError as e:
+        display_error(str(e))
+        raise typer.Exit(1)
+
+
 @app.command("attachments")
 def list_attachments(
     message_id: str = typer.Argument(..., help="Message ID"),
