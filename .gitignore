@@ -1,5 +1,14 @@
 # Local development files
 .env
+.env.local
+.env.*.local
+
+# Credentials and secrets
+*.pem
+*.key
+*.p12
+credentials.json
+tokens/
 
 # Python
 __pycache__/
