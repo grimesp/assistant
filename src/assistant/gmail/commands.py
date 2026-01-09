@@ -391,15 +391,31 @@ def delete_message(
 
 @app.command("mark-read")
 def mark_read(
-    message_id: str = typer.Argument(..., help="Message ID"),
+    message_id: Optional[str] = typer.Argument(None, help="Message ID"),
+    all_unread: bool = typer.Option(False, "--all-unread", help="Mark all unread messages as read"),
 ):
     """Mark a message as read."""
     require_auth()
 
+    if not message_id and not all_unread:
+        display_error("Provide a message ID or use --all-unread.")
+        raise typer.Exit(1)
+
     client = GmailClient()
     try:
-        client.mark_as_read(message_id)
-        display_success("Message marked as read.")
+        if all_unread:
+            messages = client.search("is:unread", max_results=500)
+            if not messages:
+                console.print("No unread messages found.")
+                return
+            count = 0
+            for msg in messages:
+                client.mark_as_read(msg["id"])
+                count += 1
+            display_success(f"Marked {count} messages as read.")
+        else:
+            client.mark_as_read(message_id)
+            display_success("Message marked as read.")
     except RuntimeError as e:
         display_error(str(e))
         raise typer.Exit(1)
@@ -445,15 +461,85 @@ def modify_labels(
 
 @app.command("archive")
 def archive_message(
-    message_id: str = typer.Argument(..., help="Message ID to archive"),
+    message_id: Optional[str] = typer.Argument(None, help="Message ID to archive"),
+    all_inbox: bool = typer.Option(False, "--all-inbox", help="Archive all messages in inbox"),
 ):
     """Archive a message (remove from inbox)."""
     require_auth()
 
+    if not message_id and not all_inbox:
+        display_error("Provide a message ID or use --all-inbox.")
+        raise typer.Exit(1)
+
     client = GmailClient()
     try:
-        client.archive(message_id)
-        display_success("Message archived.")
+        if all_inbox:
+            messages = client.list_messages(max_results=500, label_ids=["INBOX"])
+            if not messages:
+                console.print("No messages in inbox.")
+                return
+            count = 0
+            for msg in messages:
+                client.archive(msg["id"])
+                count += 1
+            display_success(f"Archived {count} messages.")
+        else:
+            client.archive(message_id)
+            display_success("Message archived.")
+    except RuntimeError as e:
+        display_error(str(e))
+        raise typer.Exit(1)
+
+
+@app.command("clear-inbox")
+def clear_inbox(
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation"),
+):
+    """Archive read, non-starred messages from inbox.
+
+    Safety: Leaves unread and starred messages in inbox.
+    Use 'mark-read --all-unread' first if you want to clear everything.
+    """
+    require_auth()
+
+    client = GmailClient()
+    try:
+        # Get all inbox messages
+        messages = client.list_messages(max_results=500, label_ids=["INBOX"])
+        if not messages:
+            console.print("Inbox is already empty.")
+            return
+
+        # Filter to only read, non-starred messages
+        to_archive = []
+        skipped_unread = 0
+        skipped_starred = 0
+
+        for msg in messages:
+            labels = msg.get("labels", [])
+            if msg.get("unread", False):
+                skipped_unread += 1
+            elif "STARRED" in labels:
+                skipped_starred += 1
+            else:
+                to_archive.append(msg)
+
+        if not to_archive:
+            console.print(f"No messages to archive. Skipped {skipped_unread} unread, {skipped_starred} starred.")
+            return
+
+        if not yes:
+            skip_msg = ""
+            if skipped_unread or skipped_starred:
+                skip_msg = f" (skipping {skipped_unread} unread, {skipped_starred} starred)"
+            if not confirm(f"Archive {len(to_archive)} read messages?{skip_msg}"):
+                console.print("Cancelled.")
+                return
+
+        for msg in to_archive:
+            client.archive(msg["id"])
+
+        display_success(f"Archived {len(to_archive)} messages. Skipped {skipped_unread} unread, {skipped_starred} starred.")
     except RuntimeError as e:
         display_error(str(e))
         raise typer.Exit(1)

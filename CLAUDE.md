@@ -63,8 +63,12 @@ assistant gmail labels
 assistant gmail trash <message_id>
 assistant gmail delete <message_id>
 assistant gmail mark-read <message_id>
+assistant gmail mark-read --all-unread              # Mark all unread as read
 assistant gmail mark-unread <message_id>
 assistant gmail archive <message_id>
+assistant gmail archive --all-inbox                 # Archive entire inbox
+assistant gmail clear-inbox                         # Archive read, non-starred only
+assistant gmail clear-inbox --yes                   # Skip confirmation
 assistant gmail label <message_id> --add LABEL --remove LABEL
 ```
 
