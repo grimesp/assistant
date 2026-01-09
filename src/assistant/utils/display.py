@@ -46,11 +46,11 @@ def format_email_list(emails: list[dict]) -> Table:
         Rich Table object
     """
     table = Table(show_header=True, header_style="bold cyan", box=None)
-    table.add_column("ID", style="dim", width=12)
-    table.add_column("From", width=25, overflow="ellipsis")
-    table.add_column("Subject", width=40, overflow="ellipsis")
-    table.add_column("Date", width=12)
-    table.add_column("", width=3)  # Unread indicator
+    table.add_column("ID", style="dim", no_wrap=True)
+    table.add_column("From", width=20, overflow="ellipsis")
+    table.add_column("Subject", overflow="ellipsis")
+    table.add_column("Date", width=8)
+    table.add_column("", width=1)  # Unread indicator
 
     for email in emails:
         unread = "[bold]*[/bold]" if email.get("unread", False) else ""
@@ -73,9 +73,9 @@ def format_email_list(emails: list[dict]) -> Table:
                 pass
 
         table.add_row(
-            email.get("id", "")[:12],
-            from_addr[:25],
-            subject[:40],
+            email.get("id", ""),
+            from_addr[:20],
+            subject,
             date_str,
             unread,
         )
@@ -137,11 +137,11 @@ def format_calendar_events(events: list[dict]) -> Table:
         Rich Table object
     """
     table = Table(show_header=True, header_style="bold magenta", box=None)
-    table.add_column("ID", style="dim", width=12)
-    table.add_column("Title", width=35, overflow="ellipsis")
+    table.add_column("ID", style="dim", no_wrap=True)
+    table.add_column("Title", overflow="ellipsis")
     table.add_column("Start", width=18)
     table.add_column("End", width=18)
-    table.add_column("Calendar", width=15, overflow="ellipsis")
+    table.add_column("Calendar", width=12, overflow="ellipsis")
 
     for event in events:
         start = event.get("start", {})
@@ -170,11 +170,11 @@ def format_calendar_events(events: list[dict]) -> Table:
                 end_str = end_dt[:16] if end_dt else ""
 
         table.add_row(
-            event.get("id", "")[:12],
-            event.get("summary", "(No Title)")[:35],
+            event.get("id", ""),
+            event.get("summary", "(No Title)"),
             start_str,
             end_str,
-            event.get("calendar_name", "")[:15],
+            event.get("calendar_name", "")[:12],
         )
 
     return table
@@ -287,15 +287,15 @@ def format_drafts(drafts: list[dict]) -> Table:
         Rich Table object
     """
     table = Table(show_header=True, header_style="bold cyan", box=None)
-    table.add_column("ID", style="dim", width=12)
+    table.add_column("ID", style="dim", no_wrap=True)
     table.add_column("To", width=25, overflow="ellipsis")
-    table.add_column("Subject", width=40, overflow="ellipsis")
+    table.add_column("Subject", overflow="ellipsis")
 
     for draft in drafts:
         table.add_row(
-            draft.get("id", "")[:12],
+            draft.get("id", ""),
             draft.get("to", "")[:25],
-            draft.get("subject", "(No Subject)")[:40],
+            draft.get("subject", "(No Subject)"),
         )
 
     return table
