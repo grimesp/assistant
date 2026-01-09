@@ -46,10 +46,10 @@ def format_email_list(emails: list[dict]) -> Table:
         Rich Table object
     """
     table = Table(show_header=True, header_style="bold cyan", box=None)
-    table.add_column("ID", style="dim", no_wrap=True)
+    table.add_column("ID", style="dim", overflow="fold")
     table.add_column("From", width=20, overflow="ellipsis")
     table.add_column("Subject", overflow="ellipsis")
-    table.add_column("Date", width=8)
+    table.add_column("Date", width=8, no_wrap=True)
     table.add_column("", width=1)  # Unread indicator
 
     for email in emails:
@@ -137,10 +137,10 @@ def format_calendar_events(events: list[dict]) -> Table:
         Rich Table object
     """
     table = Table(show_header=True, header_style="bold magenta", box=None)
-    table.add_column("ID", style="dim", no_wrap=True)
+    table.add_column("ID", style="dim", overflow="fold")
     table.add_column("Title", overflow="ellipsis")
-    table.add_column("Start", width=18)
-    table.add_column("End", width=18)
+    table.add_column("Start", width=18, no_wrap=True)
+    table.add_column("End", width=18, no_wrap=True)
     table.add_column("Calendar", width=12, overflow="ellipsis")
 
     for event in events:
@@ -287,7 +287,7 @@ def format_drafts(drafts: list[dict]) -> Table:
         Rich Table object
     """
     table = Table(show_header=True, header_style="bold cyan", box=None)
-    table.add_column("ID", style="dim", no_wrap=True)
+    table.add_column("ID", style="dim", overflow="fold")
     table.add_column("To", width=25, overflow="ellipsis")
     table.add_column("Subject", overflow="ellipsis")
 
