@@ -420,3 +420,115 @@ def confirm(message: str, default: bool = False) -> bool:
         return default
 
     return response.lower() in ("y", "yes")
+
+
+def format_spreadsheet_list(spreadsheets: list[dict]) -> Table:
+    """
+    Format a list of spreadsheets as a Rich table.
+
+    Args:
+        spreadsheets: List of spreadsheet dictionaries
+
+    Returns:
+        Rich Table object
+    """
+    table = Table(show_header=True, header_style="bold green", box=None)
+    table.add_column("ID", style="dim", width=44)
+    table.add_column("Name", width=35, overflow="ellipsis")
+    table.add_column("Modified", width=12)
+    table.add_column("Owner", width=25, overflow="ellipsis")
+
+    for sheet in spreadsheets:
+        modified = sheet.get("modified_time", "")
+        if modified:
+            try:
+                dt = datetime.fromisoformat(modified.replace("Z", "+00:00"))
+                modified = dt.strftime("%b %d, %Y")
+            except (ValueError, AttributeError):
+                modified = modified[:10]
+
+        table.add_row(
+            sheet.get("id", ""),
+            sheet.get("name", "")[:35],
+            modified,
+            sheet.get("owner", "")[:25],
+        )
+
+    return table
+
+
+def format_spreadsheet_detail(spreadsheet: dict) -> Panel:
+    """
+    Format a spreadsheet's details as a Rich panel.
+
+    Args:
+        spreadsheet: Spreadsheet dictionary with metadata and sheets
+
+    Returns:
+        Rich Panel object
+    """
+    lines = [
+        f"[bold green]Title:[/bold green] {spreadsheet.get('title', '')}",
+        f"[bold green]ID:[/bold green] {spreadsheet.get('id', '')}",
+        f"[bold green]Timezone:[/bold green] {spreadsheet.get('time_zone', '')}",
+        f"[bold green]URL:[/bold green] {spreadsheet.get('web_view_link', '')}",
+    ]
+
+    sheets = spreadsheet.get("sheets", [])
+    if sheets:
+        lines.append(f"\n[bold green]Sheets ({len(sheets)}):[/bold green]")
+        for sheet in sheets:
+            lines.append(
+                f"  [{sheet.get('sheet_id')}] {sheet.get('title', '')} "
+                f"({sheet.get('row_count', 0)} rows x {sheet.get('column_count', 0)} cols)"
+            )
+
+    content = "\n".join(lines)
+
+    return Panel(
+        content,
+        title=f"[bold]Spreadsheet[/bold]",
+        border_style="green",
+    )
+
+
+def format_sheet_data(values: list[list[Any]]) -> Table:
+    """
+    Format spreadsheet cell values as a Rich table.
+
+    Args:
+        values: 2D list of cell values
+
+    Returns:
+        Rich Table object
+    """
+    if not values:
+        return Table()
+
+    # Use first row as header if it looks like a header (all strings)
+    first_row = values[0]
+    has_header = all(isinstance(cell, str) for cell in first_row)
+
+    table = Table(show_header=has_header, header_style="bold green", box=None)
+
+    # Determine number of columns from the longest row
+    max_cols = max(len(row) for row in values)
+
+    if has_header:
+        for i, header in enumerate(first_row):
+            table.add_column(str(header) if header else f"Col {i + 1}", overflow="ellipsis")
+        # Pad header if needed
+        for i in range(len(first_row), max_cols):
+            table.add_column(f"Col {i + 1}", overflow="ellipsis")
+        data_rows = values[1:]
+    else:
+        for i in range(max_cols):
+            table.add_column(f"Col {i + 1}", overflow="ellipsis")
+        data_rows = values
+
+    for row in data_rows:
+        # Pad row with empty strings if needed
+        padded_row = list(row) + [""] * (max_cols - len(row))
+        table.add_row(*[str(cell) if cell is not None else "" for cell in padded_row])
+
+    return table

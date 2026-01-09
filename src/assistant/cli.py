@@ -19,17 +19,19 @@ from .auth import (
 )
 from .gmail.commands import app as gmail_app
 from .calendar.commands import app as calendar_app
+from .sheets.commands import app as sheets_app
 from .utils.display import console, display_error, display_success, display_warning
 
 app = typer.Typer(
     name="assistant",
-    help="CLI tool for Gmail and Google Calendar",
+    help="CLI tool for Gmail, Google Calendar, and Google Sheets",
     no_args_is_help=True,
 )
 
 # Add subcommands
 app.add_typer(gmail_app, name="gmail")
 app.add_typer(calendar_app, name="calendar")
+app.add_typer(sheets_app, name="sheets")
 
 # Auth subcommand group
 auth_app = typer.Typer(help="Authentication commands")
@@ -206,10 +208,10 @@ def version():
 @app.callback()
 def main():
     """
-    Assistant - CLI tool for Gmail and Google Calendar.
+    Assistant - CLI tool for Gmail, Google Calendar, and Google Sheets.
 
-    Use 'assistant auth login' to authenticate, then use the gmail and calendar
-    subcommands to interact with your accounts.
+    Use 'assistant auth login' to authenticate, then use the gmail, calendar,
+    and sheets subcommands to interact with your accounts.
 
     Supports multiple accounts - use 'assistant auth list' to see all accounts
     and 'assistant auth switch' to change the active account.

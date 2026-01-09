@@ -1,6 +1,6 @@
 # Assistant CLI Reference
 
-Command-line tool for Gmail and Google Calendar management.
+Command-line tool for Gmail, Google Calendar, and Google Sheets management.
 
 ## Accounts
 
@@ -134,3 +134,40 @@ assistant calendar respond <event_id> --accept
 assistant calendar respond <event_id> --decline
 assistant calendar respond <event_id> --tentative
 ```
+
+## Sheets Commands
+
+### Viewing
+```bash
+assistant sheets list                              # List recent spreadsheets
+assistant sheets list --limit 50                   # More results
+assistant sheets show <spreadsheet_id>             # Show spreadsheet details and sheets
+assistant sheets read <spreadsheet_id> "Sheet1!A1:C10"   # Read cell data
+assistant sheets read <spreadsheet_id> "A1:C10" --formulas   # Show formulas
+```
+
+### Writing
+```bash
+assistant sheets write <spreadsheet_id> "Sheet1!A1" --value "Hello"
+assistant sheets write <spreadsheet_id> "Sheet1!A1:C1" --value "A,B,C"
+assistant sheets write <spreadsheet_id> "Sheet1!A1" --csv data.csv
+assistant sheets append <spreadsheet_id> "Sheet1" --value "New,Row,Data"
+assistant sheets append <spreadsheet_id> "Sheet1" --csv more_data.csv
+assistant sheets clear <spreadsheet_id> "Sheet1!A1:C10"
+assistant sheets clear <spreadsheet_id> "Sheet1!A1:C10" --yes   # Skip confirmation
+```
+
+### Creating & Managing
+```bash
+assistant sheets create --title "New Spreadsheet"
+assistant sheets add-sheet <spreadsheet_id> --title "New Sheet"
+assistant sheets delete-sheet <spreadsheet_id> <sheet_id>
+assistant sheets delete-sheet <spreadsheet_id> <sheet_id> --yes
+assistant sheets rename-sheet <spreadsheet_id> <sheet_id> --title "Renamed"
+```
+
+### Range Notation
+- `Sheet1!A1:C10` - Cells A1 to C10 on Sheet1
+- `A1:C10` - Cells on the first sheet
+- `Sheet1` - Entire sheet (for append operations)
+- `Sheet1!A:C` - Columns A through C
