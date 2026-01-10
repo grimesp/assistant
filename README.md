@@ -1,6 +1,6 @@
 # Assistant CLI
 
-A command-line tool for interacting with Gmail and Google Calendar.
+A command-line tool for interacting with Gmail, Google Calendar, Google Sheets, and Google Drive.
 
 ## Installation
 
@@ -27,6 +27,8 @@ Before using the CLI, you need to set up Google Cloud credentials:
 2. Search for and enable these APIs:
    - **Gmail API**
    - **Google Calendar API**
+   - **Google Sheets API**
+   - **Google Drive API**
 
 ### Step 3: Configure OAuth Consent Screen
 
@@ -36,17 +38,9 @@ Before using the CLI, you need to set up Google Cloud credentials:
    - App name: "Assistant CLI"
    - User support email: your email
    - Developer contact email: your email
-4. Click **Save and Continue**
-5. On the Scopes page, click **Add or Remove Scopes**
-6. Add these scopes:
-   - `https://www.googleapis.com/auth/gmail.modify`
-   - `https://www.googleapis.com/auth/gmail.compose`
-   - `https://www.googleapis.com/auth/gmail.send`
-   - `https://www.googleapis.com/auth/gmail.settings.basic`
-   - `https://www.googleapis.com/auth/calendar`
-7. Click **Save and Continue**
-8. On the Test users page, add your email address(es)
-9. Click **Save and Continue**
+4. Click **Save and Continue** through the remaining steps (Scopes, Test users)
+   - You can skip adding scopes - the app requests them at runtime
+   - For External apps in testing mode, add your email as a test user
 
 ### Step 4: Create OAuth Credentials
 
@@ -222,6 +216,85 @@ assistant calendar respond <event_id> --accept
 assistant calendar respond <event_id> --decline
 assistant calendar respond <event_id> --tentative
 ```
+
+### Sheets Commands
+
+List spreadsheets:
+```bash
+assistant sheets list
+assistant sheets list --limit 50
+```
+
+View spreadsheet details:
+```bash
+assistant sheets show <spreadsheet_id>
+```
+
+Read data:
+```bash
+assistant sheets read <spreadsheet_id> "Sheet1!A1:C10"
+assistant sheets read <spreadsheet_id> "A1:C10" --formulas  # Show formulas
+```
+
+Write data:
+```bash
+assistant sheets write <spreadsheet_id> "Sheet1!A1" --value "Hello"
+assistant sheets write <spreadsheet_id> "Sheet1!A1:C1" --value "A,B,C"
+assistant sheets write <spreadsheet_id> "Sheet1!A1" --csv data.csv
+```
+
+Append rows:
+```bash
+assistant sheets append <spreadsheet_id> "Sheet1" --value "New,Row,Data"
+assistant sheets append <spreadsheet_id> "Sheet1" --csv more_data.csv
+```
+
+Create and manage:
+```bash
+assistant sheets create --title "New Spreadsheet"
+assistant sheets add-sheet <spreadsheet_id> --title "New Sheet"
+assistant sheets delete-sheet <spreadsheet_id> <sheet_id>
+assistant sheets rename-sheet <spreadsheet_id> <sheet_id> --title "Renamed"
+assistant sheets clear <spreadsheet_id> "Sheet1!A1:C10"
+```
+
+### Drive Commands
+
+List files:
+```bash
+assistant drive list
+assistant drive list --limit 50
+assistant drive list --query "report"  # Search by name
+```
+
+View file info:
+```bash
+assistant drive info <file_id>
+assistant drive info "https://drive.google.com/file/d/..."  # Also accepts URLs
+```
+
+Download files:
+```bash
+assistant drive download <file_id>
+assistant drive download <file_id> -o ./path      # Specific output path
+assistant drive download <url>                     # Download from URL
+assistant drive download <file_id> -f csv          # Export Google Sheets as CSV
+assistant drive download <file_id> -f pdf          # Export as PDF
+assistant drive download <file_id> -f xlsx         # Export as Excel
+assistant drive download <file_id> -f docx         # Export Google Docs as Word
+```
+
+Supported Google Drive URL formats:
+- `https://drive.google.com/file/d/{FILE_ID}/view`
+- `https://drive.google.com/open?id={FILE_ID}`
+- `https://docs.google.com/document/d/{FILE_ID}/...`
+- `https://docs.google.com/spreadsheets/d/{FILE_ID}/...`
+
+Export formats for Google Workspace files:
+- **Google Docs**: pdf (default), docx, txt, html
+- **Google Sheets**: csv (default), xlsx, pdf
+- **Google Slides**: pdf (default), pptx
+- **Google Drawings**: png (default), pdf, svg
 
 ## Gmail Search Syntax
 

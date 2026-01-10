@@ -1,6 +1,6 @@
 # Assistant CLI Reference
 
-Command-line tool for Gmail, Google Calendar, and Google Sheets management.
+Command-line tool for Gmail, Google Calendar, Google Sheets, and Google Drive management.
 
 ## Accounts
 
@@ -177,3 +177,40 @@ assistant sheets rename-sheet <spreadsheet_id> <sheet_id> --title "Renamed"
 - `A1:C10` - Cells on the first sheet
 - `Sheet1` - Entire sheet (for append operations)
 - `Sheet1!A:C` - Columns A through C
+
+## Drive Commands
+
+### Viewing
+```bash
+assistant drive list                           # List recent files
+assistant drive list --limit 50                # More results
+assistant drive list --query "report"          # Search by name
+assistant drive info <file_id>                 # Show file metadata
+assistant drive info "https://drive.google.com/file/d/..."  # Also accepts URLs
+```
+
+### Downloading
+```bash
+assistant drive download <file_id>             # Download to current directory
+assistant drive download <file_id> -o ./path   # Download to specific path
+assistant drive download <url>                 # Download from Google Drive URL
+assistant drive download <file_id> -f csv      # Export Google Sheet as CSV
+assistant drive download <file_id> -f pdf      # Export as PDF
+assistant drive download <file_id> -f xlsx     # Export Google Sheet as Excel
+assistant drive download <file_id> -f docx     # Export Google Doc as Word
+```
+
+### URL Support
+These Google Drive URL formats are supported:
+- `https://drive.google.com/file/d/{FILE_ID}/view`
+- `https://drive.google.com/open?id={FILE_ID}`
+- `https://docs.google.com/document/d/{FILE_ID}/...`
+- `https://docs.google.com/spreadsheets/d/{FILE_ID}/...`
+- `https://docs.google.com/presentation/d/{FILE_ID}/...`
+
+### Export Formats
+For Google Workspace files, available export formats:
+- **Google Docs**: pdf (default), docx, txt, html
+- **Google Sheets**: csv (default), xlsx, pdf
+- **Google Slides**: pdf (default), pptx
+- **Google Drawings**: png (default), pdf, svg
