@@ -229,6 +229,7 @@ def compose_message(
     body: Optional[str] = typer.Option(None, "--body", "-b", help="Email body"),
     cc: Optional[str] = typer.Option(None, "--cc", help="CC recipients"),
     attach: Optional[list[str]] = typer.Option(None, "--attach", "-a", help="Files to attach"),
+    html: bool = typer.Option(False, "--html", help="Send body as HTML"),
 ):
     """Compose and send a new email."""
     require_auth()
@@ -248,6 +249,7 @@ def compose_message(
             body=body,
             cc=cc or "",
             attachments=attach,
+            is_html=html,
         )
         display_success(f"Email sent! ID: {result['id']}")
     except FileNotFoundError as e:

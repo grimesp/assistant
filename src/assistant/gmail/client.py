@@ -197,6 +197,7 @@ class GmailClient:
         attachments: Optional[list[str]] = None,
         reply_to_message_id: Optional[str] = None,
         thread_id: Optional[str] = None,
+        is_html: bool = False,
     ) -> dict:
         """
         Send an email message.
@@ -210,6 +211,7 @@ class GmailClient:
             attachments: List of file paths to attach
             reply_to_message_id: Message ID if this is a reply
             thread_id: Thread ID to add this message to
+            is_html: If True, send body as HTML instead of plain text
 
         Returns:
             Sent message info
@@ -219,9 +221,10 @@ class GmailClient:
             profile = self.service.users().getProfile(userId="me").execute()
             sender = profile.get("emailAddress", "")
 
+            subtype = "html" if is_html else "plain"
             if attachments:
                 message = MIMEMultipart()
-                message.attach(MIMEText(body, "plain"))
+                message.attach(MIMEText(body, subtype))
 
                 for file_path in attachments:
                     path = Path(file_path)
@@ -247,7 +250,7 @@ class GmailClient:
                     )
                     message.attach(attachment)
             else:
-                message = MIMEText(body, "plain")
+                message = MIMEText(body, subtype)
 
             message["to"] = to
             message["from"] = sender
