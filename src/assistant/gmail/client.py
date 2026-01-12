@@ -163,6 +163,14 @@ class GmailClient:
 
         if "parts" in payload:
             extract_from_parts(payload["parts"])
+        elif payload.get("filename"):
+            # Handle single-part messages where the payload itself is the attachment
+            attachments.append({
+                "id": payload.get("body", {}).get("attachmentId"),
+                "filename": payload["filename"],
+                "mimeType": payload.get("mimeType", ""),
+                "size": payload.get("body", {}).get("size", 0),
+            })
 
         return attachments
 
