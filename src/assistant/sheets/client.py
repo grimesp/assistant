@@ -36,24 +36,32 @@ class SheetsClient:
             self._drive_service = build("drive", "v3", credentials=creds)
         return self._drive_service
 
-    def list_spreadsheets(self, max_results: int = 20) -> list[dict]:
+    def list_spreadsheets(self, max_results: int = 20, query: Optional[str] = None) -> list[dict]:
         """
         List spreadsheets the user has access to.
 
         Args:
             max_results: Maximum number of spreadsheets to return
+            query: Optional search query to filter by name
 
         Returns:
             List of spreadsheet dictionaries with id, name, modifiedTime, webViewLink
         """
         try:
+            q_parts = ["mimeType='application/vnd.google-apps.spreadsheet'"]
+            if query:
+                q_parts.append(f"name contains '{query}'")
+            q = " and ".join(q_parts)
+
             response = (
                 self.drive_service.files()
                 .list(
-                    q="mimeType='application/vnd.google-apps.spreadsheet'",
+                    q=q,
                     pageSize=max_results,
                     fields="files(id, name, modifiedTime, webViewLink, owners)",
                     orderBy="modifiedTime desc",
+                    supportsAllDrives=True,
+                    includeItemsFromAllDrives=True,
                 )
                 .execute()
             )

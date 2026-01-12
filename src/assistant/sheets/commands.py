@@ -30,6 +30,7 @@ def require_auth():
 
 @app.command("list")
 def list_spreadsheets(
+    query: Optional[str] = typer.Option(None, "--query", "-q", help="Search query"),
     limit: int = typer.Option(20, "--limit", "-n", help="Number of spreadsheets to show"),
 ):
     """List recent spreadsheets."""
@@ -37,7 +38,7 @@ def list_spreadsheets(
 
     client = SheetsClient()
     try:
-        spreadsheets = client.list_spreadsheets(max_results=limit)
+        spreadsheets = client.list_spreadsheets(max_results=limit, query=query)
 
         if not spreadsheets:
             console.print("No spreadsheets found.")

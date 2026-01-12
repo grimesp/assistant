@@ -433,9 +433,9 @@ def format_spreadsheet_list(spreadsheets: list[dict]) -> Table:
         Rich Table object
     """
     table = Table(show_header=True, header_style="bold green", box=None)
-    table.add_column("ID", style="dim", width=44)
-    table.add_column("Name", width=35, overflow="ellipsis")
-    table.add_column("Modified", width=12)
+    table.add_column("ID", style="dim", overflow="fold")
+    table.add_column("Name", overflow="ellipsis")
+    table.add_column("Modified", width=12, no_wrap=True)
     table.add_column("Owner", width=25, overflow="ellipsis")
 
     for sheet in spreadsheets:
@@ -449,9 +449,9 @@ def format_spreadsheet_list(spreadsheets: list[dict]) -> Table:
 
         table.add_row(
             sheet.get("id", ""),
-            sheet.get("name", "")[:35],
+            sheet.get("name", ""),
             modified,
-            sheet.get("owner", "")[:25],
+            sheet.get("owner", ""),
         )
 
     return table
