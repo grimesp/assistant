@@ -108,7 +108,7 @@ def format_email_detail(email: dict) -> Panel:
     ])
 
     if email.get("attachments"):
-        att_list = ", ".join(email["attachments"])
+        att_list = ", ".join(att["filename"] for att in email["attachments"])
         header_lines.append(f"[bold cyan]Attachments:[/bold cyan] {att_list}")
 
     header = "\n".join(header_lines)
