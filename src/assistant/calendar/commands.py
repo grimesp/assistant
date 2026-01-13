@@ -1,9 +1,10 @@
 """Calendar CLI commands."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 import typer
+from dateutil import parser as dateparser
 
 from ..auth import is_authenticated
 from ..utils.display import (
@@ -29,25 +30,67 @@ def require_auth():
 
 @app.command("list")
 def list_events(
-    days: int = typer.Option(7, "--days", "-d", help="Number of days to show"),
+    days: int = typer.Option(7, "--days", "-d", help="Number of days to show (for upcoming events)"),
     limit: int = typer.Option(50, "--limit", "-n", help="Maximum events to show"),
     calendar: Optional[str] = typer.Option(None, "--calendar", "-c", help="Calendar ID"),
+    from_date: Optional[str] = typer.Option(None, "--from", "-f", help="Start date (e.g., '2025-11-01' or 'last month')"),
+    to_date: Optional[str] = typer.Option(None, "--to", "-t", help="End date (e.g., '2025-11-30' or 'yesterday')"),
 ):
-    """List upcoming events."""
+    """List calendar events.
+
+    By default shows upcoming events for the next N days.
+    Use --from and --to to search a specific date range (including past events).
+    """
     require_auth()
 
     client = CalendarClient()
     try:
         calendar_id = calendar or "primary"
-        events = client.get_upcoming_events(days=days, max_results=limit, calendar_id=calendar_id)
 
-        if not events:
-            console.print(f"No events in the next {days} days.")
-            return
+        if from_date or to_date:
+            # Custom date range search
+            time_min = None
+            time_max = None
 
-        table = format_calendar_events(events)
-        console.print(table)
-        console.print(f"\n[dim]{len(events)} events in the next {days} days[/dim]")
+            if from_date:
+                time_min = dateparser.parse(from_date)
+                if time_min is None:
+                    display_error(f"Could not parse --from date: {from_date}")
+                    raise typer.Exit(1)
+
+            if to_date:
+                time_max = dateparser.parse(to_date)
+                if time_max is None:
+                    display_error(f"Could not parse --to date: {to_date}")
+                    raise typer.Exit(1)
+                # Include the entire end day
+                time_max = time_max.replace(hour=23, minute=59, second=59)
+
+            events = client.list_events(
+                calendar_id=calendar_id,
+                time_min=time_min,
+                time_max=time_max,
+                max_results=limit,
+            )
+
+            if not events:
+                console.print("No events found in the specified date range.")
+                return
+
+            table = format_calendar_events(events)
+            console.print(table)
+            console.print(f"\n[dim]{len(events)} events found[/dim]")
+        else:
+            # Default: upcoming events
+            events = client.get_upcoming_events(days=days, max_results=limit, calendar_id=calendar_id)
+
+            if not events:
+                console.print(f"No events in the next {days} days.")
+                return
+
+            table = format_calendar_events(events)
+            console.print(table)
+            console.print(f"\n[dim]{len(events)} events in the next {days} days[/dim]")
     except RuntimeError as e:
         display_error(str(e))
         raise typer.Exit(1)
