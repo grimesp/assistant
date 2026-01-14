@@ -411,18 +411,20 @@ def delete_draft(
 
 @app.command("trash")
 def trash_message(
-    message_id: str = typer.Argument(..., help="Message ID to trash"),
+    message_ids: list[str] = typer.Argument(..., help="Message ID(s) to trash"),
 ):
-    """Move a message to trash."""
+    """Move message(s) to trash."""
     require_auth()
 
     client = GmailClient()
-    try:
-        client.trash_message(message_id)
-        display_success("Message moved to trash.")
-    except RuntimeError as e:
-        display_error(str(e))
-        raise typer.Exit(1)
+    count = 0
+    for message_id in message_ids:
+        try:
+            client.trash_message(message_id)
+            count += 1
+        except RuntimeError as e:
+            display_error(f"Failed to trash {message_id}: {e}")
+    display_success(f"Moved {count} message(s) to trash.")
 
 
 @app.command("delete")
@@ -517,14 +519,18 @@ def modify_labels(
 
 @app.command("archive")
 def archive_message(
-    message_id: Optional[str] = typer.Argument(None, help="Message ID to archive"),
-    all_inbox: bool = typer.Option(False, "--all-inbox", help="Archive all messages in inbox"),
+    message_ids: list[str] | None = typer.Argument(
+        None, help="Message ID(s) to archive"
+    ),
+    all_inbox: bool = typer.Option(
+        False, "--all-inbox", help="Archive all messages in inbox"
+    ),
 ):
-    """Archive a message (remove from inbox)."""
+    """Archive message(s) (remove from inbox)."""
     require_auth()
 
-    if not message_id and not all_inbox:
-        display_error("Provide a message ID or use --all-inbox.")
+    if not message_ids and not all_inbox:
+        display_error("Provide message ID(s) or use --all-inbox.")
         raise typer.Exit(1)
 
     client = GmailClient()
@@ -540,8 +546,11 @@ def archive_message(
                 count += 1
             display_success(f"Archived {count} messages.")
         else:
-            client.archive(message_id)
-            display_success("Message archived.")
+            count = 0
+            for message_id in message_ids:
+                client.archive(message_id)
+                count += 1
+            display_success(f"Archived {count} message(s).")
     except RuntimeError as e:
         display_error(str(e))
         raise typer.Exit(1)

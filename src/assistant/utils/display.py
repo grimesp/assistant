@@ -12,7 +12,7 @@ from rich.table import Table
 from rich.text import Text
 from rich.markdown import Markdown
 
-console = Console()
+console = Console(width=150, force_terminal=True)
 
 
 def display_error(message: str) -> None:
@@ -45,17 +45,22 @@ def format_email_list(emails: list[dict]) -> Table:
     Returns:
         Rich Table object
     """
-    table = Table(show_header=True, header_style="bold cyan", box=None)
-    table.add_column("ID", style="dim", overflow="fold")
-    table.add_column("From", width=20, overflow="ellipsis")
-    table.add_column("Subject", overflow="ellipsis")
-    table.add_column("Date", width=8, no_wrap=True)
-    table.add_column("", width=1)  # Unread indicator
+    from rich import box
+
+    table = Table(
+        show_header=True,
+        header_style="bold cyan",
+        box=box.SIMPLE,
+    )
+    table.add_column("", width=1, justify="center")  # Unread indicator
+    table.add_column("ID", style="yellow", width=18, no_wrap=True)
+    table.add_column("From", width=28, overflow="ellipsis", no_wrap=True)
+    table.add_column("Subject", width=60, overflow="ellipsis", no_wrap=True)
+    table.add_column("Date", width=18, no_wrap=True)
 
     for email in emails:
-        unread = "[bold]*[/bold]" if email.get("unread", False) else ""
+        unread = "[bold red]*[/bold red]" if email.get("unread", False) else " "
         from_addr = email.get("from", "Unknown")
-        # Extract just the name or email, not the full header
         if "<" in from_addr:
             from_addr = from_addr.split("<")[0].strip().strip('"')
 
@@ -66,18 +71,23 @@ def format_email_list(emails: list[dict]) -> Table:
         date_str = email.get("date", "")
         if date_str:
             try:
-                # Try to parse and format the date
                 dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-                date_str = dt.strftime("%b %d")
+                date_str = dt.strftime("%Y-%m-%d %H:%M")
             except (ValueError, AttributeError):
-                pass
+                # Try parsing RFC 2822 format (common in emails)
+                from email.utils import parsedate_to_datetime
+                try:
+                    dt = parsedate_to_datetime(date_str)
+                    date_str = dt.strftime("%Y-%m-%d %H:%M")
+                except (ValueError, TypeError):
+                    pass
 
         table.add_row(
+            unread,
             email.get("id", ""),
-            from_addr[:20],
+            from_addr,
             subject,
             date_str,
-            unread,
         )
 
     return table
