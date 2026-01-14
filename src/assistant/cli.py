@@ -41,11 +41,17 @@ app.add_typer(auth_app, name="auth")
 
 
 @auth_app.command("login")
-def auth_login():
+def auth_login(
+    headless: bool = typer.Option(
+        False, "--headless", help="Use console-based auth flow for headless servers"
+    ),
+):
     """Authenticate with Google (Gmail and Calendar).
 
     You can login to multiple accounts. Each new login adds an account.
     The newly logged-in account becomes the active account.
+
+    Use --headless on servers without a browser.
     """
     credentials_path = get_credentials_path()
 
@@ -63,10 +69,14 @@ def auth_login():
         )
         raise typer.Exit(1)
 
-    console.print("Opening browser for Google authentication...")
-    console.print("[dim]You'll be asked to grant access to Gmail and Calendar.[/dim]")
+    if headless:
+        console.print("Starting console-based authentication...")
+        console.print("[dim]You'll receive a URL to open in any browser.[/dim]")
+    else:
+        console.print("Opening browser for Google authentication...")
+        console.print("[dim]You'll be asked to grant access to Gmail and Calendar.[/dim]")
 
-    email = login()
+    email = login(headless=headless)
     if email:
         display_success(f"Successfully authenticated as {email}!")
 

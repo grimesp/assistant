@@ -170,12 +170,13 @@ def get_credentials(account: Optional[str] = None) -> Optional[Credentials]:
     return creds
 
 
-def login(set_as_active: bool = True) -> Optional[str]:
+def login(set_as_active: bool = True, headless: bool = False) -> Optional[str]:
     """
     Initiate the OAuth login flow for a new or existing account.
 
     Args:
         set_as_active: Whether to set this account as the active account.
+        headless: Use manual code entry flow for servers without a browser.
 
     Returns:
         Email of the logged-in account, or None if login failed.
@@ -189,7 +190,33 @@ def login(set_as_active: bool = True) -> Optional[str]:
     flow = InstalledAppFlow.from_client_secrets_file(
         str(credentials_path), SCOPES
     )
-    creds = flow.run_local_server(port=0)
+
+    if headless:
+        # Manual flow for headless servers
+        flow.redirect_uri = "http://localhost:1"
+        auth_url, _ = flow.authorization_url(prompt="consent")
+
+        print(f"\nOpen this URL in your browser:\n\n{auth_url}\n")
+        print("After authorizing, you'll be redirected to a URL that fails to load.")
+        print("Copy the FULL URL from your browser's address bar and paste it here.\n")
+
+        redirect_response = input("Paste the redirect URL: ").strip()
+
+        # Extract the authorization code from the redirect URL
+        from urllib.parse import urlparse, parse_qs
+
+        parsed = urlparse(redirect_response)
+        query_params = parse_qs(parsed.query)
+
+        if "code" not in query_params:
+            print("Error: Could not find authorization code in URL.")
+            return None
+
+        code = query_params["code"][0]
+        flow.fetch_token(code=code)
+        creds = flow.credentials
+    else:
+        creds = flow.run_local_server(port=0)
 
     # Get the email for this account
     from googleapiclient.discovery import build
